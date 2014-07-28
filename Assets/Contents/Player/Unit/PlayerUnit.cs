@@ -2,9 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class PlayerTest : MonoBehaviour {
-	static private PlayerTest instance;
-	static public PlayerTest Get() { return instance; }
+public class PlayerUnit : MonoBehaviour {
+	static private PlayerUnit instance;
+	static public PlayerUnit Get() { return instance; }
 
 	[SerializeField] float tapSec;
 	[SerializeField] float flickSec;
@@ -12,8 +12,10 @@ public class PlayerTest : MonoBehaviour {
 	[SerializeField] float forcePower;
 	[SerializeField] float weightPower;
 	[SerializeField] float movePower;
+
 	[SerializeField] ChainTest prefabChain;
 	[SerializeField] ChainTest prefabBlock;
+
 	int blockNum;
 	int waitForJointFrames;
 
@@ -34,8 +36,6 @@ public class PlayerTest : MonoBehaviour {
 	[SerializeField] float maxZoom = 12;
 	[SerializeField] float distToZoom = 480;
 
-	bool isHoldPlayer;
-
 	List<ChainTest> blocks = new List<ChainTest>();
 	DistanceJoint2D joint;
 
@@ -45,9 +45,13 @@ public class PlayerTest : MonoBehaviour {
 	Vector3 contactPos;
 	Vector2 contactVec;
 
+	PlayerLineManager[] lineManagers;
+
 	float holdCount;
 
 	void Awake () {
+		lineManagers = GetComponents<PlayerLineManager>();
+
 		blockStacks = new GameObject();
 		blockStacks.name = "blockStacks";
 		instance = this;
@@ -162,7 +166,6 @@ public class PlayerTest : MonoBehaviour {
 				posWorldBegan = Camera.main.ScreenToWorldPoint(posInputBegan);
 				pressCount = 0;			
 				holdCount = 0;
-//				isHoldPlayer = Vector3.Distance(posInputBegan, Camera.main.WorldToScreenPoint(transform.position)) < holdPlayerRange;
 				break;
 			case TouchPhase.Moved:
 				if(inputNum > 1) {
@@ -172,12 +175,16 @@ public class PlayerTest : MonoBehaviour {
 						Vector2 screenPosition = Camera.main.WorldToScreenPoint(transform.position);
 //							Vector2 movedToBegin = inputPosition - posInputBegan;	// 入力始点への角度
 						Vector2 pos2D = transform.position;
-						Vector2 playerToRoot = blockTailJoint.anchor - pos2D;	// 接続位置への角度
+						Vector2 root = blocks[blockNum].mainJoint.connectedAnchor;
+						if(joint.distance < 0.5f && blockNum > 0)
+							root = blocks[blockNum-1].mainJoint.connectedAnchor;
+						Vector2 playerToRoot = root - pos2D;	// 接続位置への角度
 						
 						Debug.DrawLine(transform.position, posWorldMoved, Color.red);
 						if(Vector3.Distance(screenPosition, inputPosition) > holdPlayerExpand) 
 						{
-							float distance = Vector2.Distance(posWorldMoved, blockTailJoint.anchor);
+							float distance = Vector2.Distance(posWorldMoved, root);
+							Debug.DrawRay(root, Vector3.up, Color.blue);
 							SetChainLength(distance);
 						}
 					}
@@ -199,8 +206,6 @@ public class PlayerTest : MonoBehaviour {
 				posInputEnded = inputPosition;
 				posWorldEnded = Camera.main.ScreenToWorldPoint(posInputEnded);
 
-				isHoldPlayer = false;
-
 				if(Vector3.Distance(posInputBegan, posInputEnded) < flickDist)
 					isTapped = (pressCount < tapSec);
 				else isFlicked = (pressCount < flickSec);
@@ -210,7 +215,6 @@ public class PlayerTest : MonoBehaviour {
 		}
 
 		if(joint.enabled) {
-			joint.distance = stringLength;
 
 			{
 				for(int i = 0; i <= blockNum; ++i) {
@@ -251,15 +255,16 @@ public class PlayerTest : MonoBehaviour {
 						blocks[blockNum].gameObject.SetActive(false);
 
 						blockNum--;
+						joint.connectedAnchor = blocks[blockNum].mainJoint.connectedAnchor;
+						joint.distance = joint.distance + (blocks[blockNum].collider2D as BoxCollider2D).size.x;
+
 						blocks[blockNum].rigidbody2D.isKinematic = false;
 						blocks[blockNum].mainJoint.anchor = new Vector2(vec.magnitude * 0.5f, 0);
 						(blocks[blockNum].collider2D as BoxCollider2D).size = new Vector2(vec.magnitude, 0.1f);
 						blocks[blockNum].collider2D.isTrigger = true;
 						waitForJointFrames = 2;
 
-						joint.connectedAnchor = blocks[blockNum].mainJoint.connectedAnchor;
-						joint.distance = joint.distance + (blocks[blockNum].collider2D as BoxCollider2D).size.x;
-						SetChainLength(joint.distance);
+//						SetChainLength(joint.distance);
 
 
 						Destroy(blockTailJoint);
@@ -279,7 +284,7 @@ public class PlayerTest : MonoBehaviour {
 
 					joint.connectedAnchor = endPos;
 					joint.distance = joint.distance - vec.magnitude;
-					SetChainLength(joint.distance);
+//					SetChainLength(joint.distance);
 
 					blocks[blockNum].isContacted = false;
 					blocks[blockNum].mainJoint.anchor = new Vector2(vec.magnitude * 0.5f, 0);
@@ -321,18 +326,18 @@ public class PlayerTest : MonoBehaviour {
 		}
 		else if(isFlicked) {
 			Vector3 vec = posWorldEnded - posWorldBegan;
+			Vector2 vec2D = vec;
 			if(joint.enabled) {
-				float dot = Vector3.Dot(vec, rootJointPos - transform.position);
+				Vector2 pos = transform.position;
+				float dot = Vector3.Dot(vec, joint.connectedAnchor - pos);
 				if(dot < -22.5f) {
-					vec = joint.connectedAnchor;
-					vec.x -= transform.position.x;
-					vec.y -= transform.position.y;
-					vec = vec * 2;
+					vec2D = joint.connectedAnchor - pos;
+					vec2D = vec2D * 2;
 				}
 				else {
-					vec = Vector3.zero;
+					vec2D = Vector2.zero;
 				}
-				rigidbody2D.AddForce(vec * forcePower, ForceMode2D.Impulse);
+				rigidbody2D.AddForce(vec2D * forcePower, ForceMode2D.Impulse);
 			}
 			else {
 				RaycastHit2D result = Physics2D.Raycast(transform.position, vec, Mathf.Infinity, 1);
@@ -344,6 +349,7 @@ public class PlayerTest : MonoBehaviour {
 					joint.enabled = true;
 					joint.distance = Vector3.Distance(rootJointPos, transform.position);
 					joint.connectedAnchor = rootJointPos;
+					stringLength = joint.distance;
 
 					vec = rootJointPos - transform.position;
 					blocks[0].transform.position = transform.position + vec * 0.5f;
@@ -371,9 +377,6 @@ public class PlayerTest : MonoBehaviour {
 
 		pressCount += Time.deltaTime;
 
-		if(isHoldPlayer)
-			return;
-
 		Vector3 posCam = Camera.main.transform.position;
 		Vector3 lookAt = transform.position;
 		if(joint.enabled) 
@@ -392,7 +395,32 @@ public class PlayerTest : MonoBehaviour {
 	}
 
 	void SetChainLength(float length) {
-		stringLength = Mathf.Clamp(length, 0, maxLength);
+		length = Mathf.Clamp(length, 0, maxLength);
+		Debug.Log("length "+ length);
+		float offset = (length - stringLength);
+		if(offset < 0) {
+			if(joint.distance < -offset) {
+				offset += joint.distance;
+				blocks[blockNum].gameObject.SetActive(false);
+
+				blockNum--;
+				joint.connectedAnchor = blocks[blockNum].mainJoint.connectedAnchor;
+				joint.distance = (blocks[blockNum].collider2D as BoxCollider2D).size.x;
+
+				blocks[blockNum].rigidbody2D.isKinematic = false;
+				blocks[blockNum].mainJoint.anchor = new Vector2(joint.distance * 0.5f, 0);
+				(blocks[blockNum].collider2D as BoxCollider2D).size = new Vector2(joint.distance, 0.1f);
+				blocks[blockNum].collider2D.isTrigger = true;
+				waitForJointFrames = 2;
+
+				Destroy(blockTailJoint);
+				blockTailJoint = blocks[blockNum].gameObject.AddComponent<HingeJoint2D>();
+				blockTailJoint.anchor = new Vector2(-joint.distance * 0.5f, 0);
+				blockTailJoint.enabled = false;						
+			}
+		}
+		joint.distance = joint.distance + offset;
+		stringLength = length;
 	}
 	
 	bool isStand = false;
@@ -408,6 +436,16 @@ public class PlayerTest : MonoBehaviour {
 	void OnGUI() {
 		GUILayout.Label("fps "+ (Time.deltaTime * 60 * 60));
 		GUILayout.Label("velocity "+ rigidbody2D.velocity.magnitude);
+		GUILayout.Label("stringLength "+ stringLength);
+
+		float totalLength = 0;
+		GUILayout.Label("joint.distance "+ joint.distance);
+		for(int i = 0; i <= blockNum; ++i) {
+			float length = (blocks[i].collider2D as BoxCollider2D).size.x;
+			GUILayout.Label("block "+ i+ " length "+ length);
+			totalLength += length;
+		}
+		GUILayout.Label("total length "+ totalLength);
 
 //		isDispGizmos ^= GUILayout.Button("disp gizmos", GUILayout.Height(64));
 	}

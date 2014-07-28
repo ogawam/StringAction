@@ -30,7 +30,7 @@ public class ChainTest : MonoBehaviour {
 	}
 
 	void OnDrawGizmos() {
-		if(PlayerTest.Get() && PlayerTest.Get().isDispGizmos) {
+		if(PlayerUnit.Get() && PlayerUnit.Get().isDispGizmos) {
 			if(isContacted) 
 				Gizmos.color = Color.red;
 			Gizmos.DrawSphere(contactPos, 8);
