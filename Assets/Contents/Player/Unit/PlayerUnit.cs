@@ -37,7 +37,7 @@ public class PlayerUnit : MonoBehaviour {
 	[SerializeField] float distToZoom = 480;
 
 	List<ChainTest> blocks = new List<ChainTest>();
-	DistanceJoint2D joint;
+//	DistanceJoint2D joint;
 
 	Vector3 rootJointPos;
 	Vector3 tailJointPos;
@@ -59,6 +59,7 @@ public class PlayerUnit : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+/*
 		int layerIndex = LayerMask.NameToLayer("Ignore Raycast");
 		Physics2D.IgnoreLayerCollision(layerIndex, layerIndex, true);
 
@@ -73,6 +74,7 @@ public class PlayerUnit : MonoBehaviour {
 			block.gameObject.SetActive(false);
 			blocks.Add(block);
 		}
+*/
 	}
 
 	Vector2 posInputBegan = Vector2.zero;
@@ -169,7 +171,7 @@ public class PlayerUnit : MonoBehaviour {
 				break;
 			case TouchPhase.Moved:
 				if(inputNum > 1) {
-
+/*
 					if(joint.enabled) {
 						Vector2 posWorldMoved = Camera.main.ScreenToWorldPoint(inputPosition);
 						Vector2 screenPosition = Camera.main.WorldToScreenPoint(transform.position);
@@ -188,11 +190,13 @@ public class PlayerUnit : MonoBehaviour {
 							SetChainLength(distance);
 						}
 					}
+*/
 				}
 				else if(isStand) {
 					Vector2 posWorldMoved = Camera.main.ScreenToWorldPoint(inputPosition);
 					rigidbody2D.AddForce(Vector2.right * (posWorldMoved.x - transform.position.x) * movePower);
 				}
+/*
 				else if(joint.enabled) {
 					Vector2 posWorldMoved = Camera.main.ScreenToWorldPoint(inputPosition);
 					if(Vector2.Dot(rigidbody2D.velocity, posWorldMoved - inputPosition) < 22.5f) {
@@ -201,6 +205,7 @@ public class PlayerUnit : MonoBehaviour {
 						rigidbody2D.AddForce(vel.normalized * Mathf.Max(velSpd, velMin) * 60 * Time.deltaTime);
 					}
 				}
+*/
 				break;
 			case TouchPhase.Ended:
 				posInputEnded = inputPosition;
@@ -213,10 +218,11 @@ public class PlayerUnit : MonoBehaviour {
 			}
 			Debug.DrawLine(posWorldBegan, posWorldEnded);
 		}
-
+/*
 		if(joint.enabled) {
 
 			{
+				// チェインのデバッグ表示
 				for(int i = 0; i <= blockNum; ++i) {
 					Vector2 bgnPos = blocks[i].mainJoint.connectedAnchor;
 					Vector2 endPos = Vector2.zero;
@@ -226,11 +232,13 @@ public class PlayerUnit : MonoBehaviour {
 					Debug.DrawLine(bgnPos, endPos, Color.green);
 				}
 
+				// 
 				Vector2 pos = transform.position;
 				Vector2 vec = blocks[blockNum].mainJoint.connectedAnchor - pos;
 				blocks[blockNum].mainJoint.anchor = new Vector2(vec.magnitude * 0.5f, 0);
 				(blocks[blockNum].collider2D as BoxCollider2D).size = new Vector2(vec.magnitude, 0.1f);
 
+				// 
 				if(blockTailJoint != null) {
 					blockTailJoint.anchor = new Vector2(-vec.magnitude * 0.5f, 0);
 					blockTailJoint.connectedAnchor = transform.position;
@@ -314,19 +322,24 @@ public class PlayerUnit : MonoBehaviour {
 			}
 			Debug.DrawLine(blockPos[0], blockPos[1], Color.blue);
 		}
-
+*/
 
 		Debug.DrawRay(transform.position, rigidbody2D.velocity);
 
 		if(isTapped) {
+			foreach(PlayerLineManager lineManager in lineManagers)
+				lineManager.Disjoint();				
+/*
 			joint.enabled = false;
 			foreach(ChainTest block in blocks) {
 				block.Disappear();
 			}			
+*/
 		}
 		else if(isFlicked) {
 			Vector3 vec = posWorldEnded - posWorldBegan;
 			Vector2 vec2D = vec;
+/*
 			if(joint.enabled) {
 				Vector2 pos = transform.position;
 				float dot = Vector3.Dot(vec, joint.connectedAnchor - pos);
@@ -338,12 +351,16 @@ public class PlayerUnit : MonoBehaviour {
 					vec2D = Vector2.zero;
 				}
 				rigidbody2D.AddForce(vec2D * forcePower, ForceMode2D.Impulse);
+
 			}
-			else {
+			else 
+*/			{
 				RaycastHit2D result = Physics2D.Raycast(transform.position, vec, Mathf.Infinity, 1);
 				if(result) {
 					contactVec = result.normal;
 					rootJointPos = result.point + result.normal * 0.2f;
+					lineManagers[0].Joint(rootJointPos);
+/*					
 					contactPos = rootJointPos;
 
 					joint.enabled = true;
@@ -368,6 +385,7 @@ public class PlayerUnit : MonoBehaviour {
 					blockTailJoint = blocks[blockNum].gameObject.AddComponent<HingeJoint2D>();
 					blockTailJoint.anchor = new Vector2(-vec.magnitude * 0.5f, 0);
 					blockTailJoint.enabled = false;						
+*/
 				}
 			}
 			isFlicked = false;
@@ -379,8 +397,10 @@ public class PlayerUnit : MonoBehaviour {
 
 		Vector3 posCam = Camera.main.transform.position;
 		Vector3 lookAt = transform.position;
+/*
 		if(joint.enabled) 
 			lookAt += (rootJointPos - lookAt) * 0.5f;
+*/
 		posCam.x += (lookAt.x - posCam.x) * 0.5f;
 		posCam.y += (lookAt.y - posCam.y) * 0.5f;
 		Camera.main.transform.position = posCam;
@@ -393,7 +413,7 @@ public class PlayerUnit : MonoBehaviour {
 		sea.transform.position = transform.position;
 		sea.transform.localScale = Vector3.one * (1.5f + (2.0f * rate));
 	}
-
+/*
 	void SetChainLength(float length) {
 		length = Mathf.Clamp(length, 0, maxLength);
 		Debug.Log("length "+ length);
@@ -422,7 +442,7 @@ public class PlayerUnit : MonoBehaviour {
 		joint.distance = joint.distance + offset;
 		stringLength = length;
 	}
-	
+*/
 	bool isStand = false;
 	void OnCollisionStay2D(Collision2D colli) {
 		isStand = true;
@@ -434,6 +454,7 @@ public class PlayerUnit : MonoBehaviour {
 
 
 	void OnGUI() {
+/*
 		GUILayout.Label("fps "+ (Time.deltaTime * 60 * 60));
 		GUILayout.Label("velocity "+ rigidbody2D.velocity.magnitude);
 		GUILayout.Label("stringLength "+ stringLength);
@@ -446,7 +467,7 @@ public class PlayerUnit : MonoBehaviour {
 			totalLength += length;
 		}
 		GUILayout.Label("total length "+ totalLength);
-
+*/
 //		isDispGizmos ^= GUILayout.Button("disp gizmos", GUILayout.Height(64));
 	}
 
