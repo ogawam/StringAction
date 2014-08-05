@@ -62,19 +62,22 @@ public class PlayerLine : MonoBehaviour {
 		gameObject.SetActive(true);
 
 		Vector3 vec = rootPos - bodyPos;
-		float angle = Vector3.Angle(rootPos, bodyPos);
+		float angle = Mathf.Rad2Deg * Mathf.Atan2(vec.x, vec.y);
 		transform.position = bodyPos + (vec * 0.5f);
-		transform.eulerAngles = Vector3.forward * angle;
-		Debug.Log("joint angle "+ angle);
+		transform.eulerAngles = Vector3.back * angle;
 		
+		// 接触点へのジョイント
 		hingeJoint2D.connectedAnchor = rootPos;
-		hingeJoint2D.anchor = new Vector2(vec.magnitude * 0.5f, 0);
-		boxCollider2D.size = new Vector2(vec.magnitude, colliWidth);
+		hingeJoint2D.anchor = new Vector2(0, vec.magnitude * 0.5f);
+
+		boxCollider2D.size = new Vector2(colliWidth, vec.magnitude);
 		boxCollider2D.isTrigger = true;
+
+		Debug.Log("vec "+ vec+ " angle "+ angle + " inv "+ (360 - angle));
 
 		isContacted = 
 		isContactedFirst = false;
-		waitForJointFrames = 2;		
+		waitForJointFrames = 10;		
 	}
 
 	public void Disjoint() {

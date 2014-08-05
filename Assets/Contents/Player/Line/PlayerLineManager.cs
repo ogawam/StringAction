@@ -47,16 +47,18 @@ public class PlayerLineManager : MonoBehaviour {
 			PlayerLine tailLine = lines[lineUseNum-1];
 			Vector2 bgnPos = tailLine.MainJoint.connectedAnchor;
 			Vector2 endPos = transform.position;
+			Vector2 vec = bgnPos - endPos;
 
 			// 本体への接続を更新
-			lineJoint.anchor = new Vector2(-Vector2.Distance(bgnPos, endPos) * 0.5f, 0);
+			lineJoint.anchor = new Vector2(0, -vec.magnitude * 0.5f);
 			lineJoint.connectedAnchor = transform.position;
 			lineJoint.enabled = true;		
 
 			// 末端のラインを距離にあわせる
-			Vector2 vec = bgnPos - endPos;
-			tailLine.MainJoint.anchor = new Vector2(vec.magnitude * 0.5f, 0);
-			tailLine.MainCollider.size = new Vector2(vec.magnitude, 0.1f);
+			tailLine.MainJoint.anchor = new Vector2(0, vec.magnitude * 0.5f);
+			tailLine.MainCollider.size = new Vector2(0.1f, vec.magnitude);
+			Debug.DrawLine(bgnPos, endPos, Color.green);
+		//	Debug.Log(vec.magnitude);
 
 
 			// 衝突チェックと中折れ
@@ -75,8 +77,8 @@ public class PlayerLineManager : MonoBehaviour {
 				bodyJoint.distance = bodyJoint.distance - vec.magnitude;
 
 				// 
-				tailLine.MainJoint.anchor = new Vector2(vec.magnitude * 0.5f, 0);
-				tailLine.MainCollider.size = new Vector2(vec.magnitude, 0.1f);
+				tailLine.MainJoint.anchor = new Vector2(0, vec.magnitude * 0.5f);
+				tailLine.MainCollider.size = new Vector2(0.1f, vec.magnitude);
 				tailLine.isContacted = false;
 
 				Joint(endPos);
@@ -94,15 +96,16 @@ public class PlayerLineManager : MonoBehaviour {
 			bodyJoint.distance = totalDist;
 			bodyJoint.connectedAnchor = jointPos;
 
-			lines[lineUseNum].Joint(jointPos, transform.position);
-
 			Destroy(lineJoint);
+
 			lineJoint = lines[lineUseNum].gameObject.AddComponent<HingeJoint2D>();
-			lineJoint.anchor = new Vector2(-totalDist * 0.5f, 0);
+			lineJoint.connectedAnchor = transform.position;
+			lineJoint.anchor = new Vector2(0, -totalDist * 0.5f);
 			lineJoint.enabled = false;						
+
+			lines[lineUseNum].Joint(jointPos, transform.position);
 			lineUseNum++;
 
-			Debug.Break();
 		}
 	}
 
