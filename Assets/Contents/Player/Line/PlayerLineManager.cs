@@ -50,13 +50,19 @@ public class PlayerLineManager : MonoBehaviour {
 			Vector2 vec = bgnPos - endPos;
 
 			// 本体への接続を更新
-			lineJoint.anchor = new Vector2(0, -vec.magnitude * 0.5f);
-			lineJoint.connectedAnchor = transform.position;
-			lineJoint.enabled = true;		
+			if(lineJoint != null) {
+				lineJoint.anchor = new Vector2(0, -vec.magnitude * 0.5f);
+				lineJoint.connectedAnchor = transform.position;
+				lineJoint.enabled = true;		
+			}
 
 			// 末端のラインを距離にあわせる
 			tailLine.MainJoint.anchor = new Vector2(0, vec.magnitude * 0.5f);
 			tailLine.MainCollider.size = new Vector2(0.1f, vec.magnitude);
+
+			float angle = Mathf.Rad2Deg * Mathf.Atan2(vec.x, vec.y);
+			tailLine.transform.position = endPos + (vec * 0.5f);
+			tailLine.transform.eulerAngles = Vector3.back * angle;
 			Debug.DrawLine(bgnPos, endPos, Color.green);
 		//	Debug.Log(vec.magnitude);
 
@@ -96,14 +102,16 @@ public class PlayerLineManager : MonoBehaviour {
 			bodyJoint.distance = totalDist;
 			bodyJoint.connectedAnchor = jointPos;
 
-			Destroy(lineJoint);
+			// 先端と接点を繋ぐ
+			lines[lineUseNum].Joint(jointPos, transform.position);
 
+			// 末端と本体を繋ぐ
+			Destroy(lineJoint);
 			lineJoint = lines[lineUseNum].gameObject.AddComponent<HingeJoint2D>();
 			lineJoint.connectedAnchor = transform.position;
 			lineJoint.anchor = new Vector2(0, -totalDist * 0.5f);
 			lineJoint.enabled = false;						
 
-			lines[lineUseNum].Joint(jointPos, transform.position);
 			lineUseNum++;
 
 		}

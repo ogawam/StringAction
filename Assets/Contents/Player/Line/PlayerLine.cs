@@ -71,13 +71,13 @@ public class PlayerLine : MonoBehaviour {
 		hingeJoint2D.anchor = new Vector2(0, vec.magnitude * 0.5f);
 
 		boxCollider2D.size = new Vector2(colliWidth, vec.magnitude);
-		boxCollider2D.isTrigger = true;
+		boxCollider2D.isTrigger = false;
 
 		Debug.Log("vec "+ vec+ " angle "+ angle + " inv "+ (360 - angle));
 
 		isContacted = 
 		isContactedFirst = false;
-		waitForJointFrames = 10;		
+		waitForJointFrames = 1;		
 	}
 
 	public void Disjoint() {
