@@ -78,28 +78,57 @@ public class PlayerLineManager : MonoBehaviour {
 				endPos = hitPos + vec.normalized * 0.2f;
 				vec = endPos - bgnPos;
 
-				// 
-				bodyJoint.connectedAnchor = endPos;
-				bodyJoint.distance = bodyJoint.distance - vec.magnitude;
-
-				// 
+				// 折れた場所までの長さにする
 				tailLine.MainJoint.anchor = new Vector2(0, vec.magnitude * 0.5f);
 				tailLine.MainCollider.size = new Vector2(0.1f, vec.magnitude);
 				tailLine.isContacted = false;
 
-				Joint(endPos);
+				Joint(endPos, bodyJoint.distance - vec.magnitude);
+			}
+			else if(lineUseNum > 1) {
+				bgnPos = lines[lineUseNum-2].MainJoint.connectedAnchor;
+				endPos = transform.position;
+				vec = bgnPos - endPos;
+
+				RaycastHit2D result = Physics2D.Raycast(endPos, vec, vec.magnitude, 1);
+				if(result.collider != null) {
+					Debug.DrawRay(endPos, vec, Color.red);
+					Debug.DrawRay(result.point, result.normal * 10, Color.red);
+				}
+				else {
+					Debug.DrawRay(endPos, vec, Color.yellow);
+					lines[lineUseNum-1].Disjoint();
+
+					lineUseNum--;
+					tailLine = lines[lineUseNum-1];
+					bodyJoint.connectedAnchor = tailLine.MainJoint.connectedAnchor;
+					bodyJoint.distance = bodyJoint.distance + tailLine.MainCollider.size.y;
+
+					tailLine.Joint(bgnPos, endPos);
+
+					Destroy(lineJoint);
+					lineJoint = tailLine.gameObject.AddComponent<HingeJoint2D>();
+					lineJoint.anchor = new Vector2(0, -vec.magnitude * 0.5f);
+					lineJoint.enabled = false;					
+				}				
 			}
 		}
 	}
 
 	public void Joint(Vector3 jointPos_) {
+		Joint(jointPos_, -1);
+	}
+
+	public void Joint(Vector3 jointPos_, float distance) {
 
 		if(lineUseNum < lines.Length) {
 			jointPos = jointPos_;
 			totalDist = Vector3.Distance(jointPos, transform.position);
+			if(distance < 0)
+				distance = totalDist;
 
 			bodyJoint.enabled = true;
-			bodyJoint.distance = totalDist;
+			bodyJoint.distance = distance;
 			bodyJoint.connectedAnchor = jointPos;
 
 			// 先端と接点を繋ぐ
