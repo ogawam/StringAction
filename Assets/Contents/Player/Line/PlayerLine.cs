@@ -67,8 +67,6 @@ public class PlayerLine : MonoBehaviour {
 
 		boxCollider2D.size = new Vector2(colliWidth, vec.magnitude);
 
-		Debug.Log("vec "+ vec+ " angle "+ angle + " inv "+ (360 - angle));
-
 		isContacted = 
 		isContactedFirst = false;
 	}

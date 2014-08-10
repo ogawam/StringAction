@@ -163,44 +163,41 @@ public class PlayerUnit : MonoBehaviour {
 				break;
 			case TouchPhase.Moved:
 				if(inputNum > 1) {
-/*
-					if(joint.enabled) {
+
+					if(lineManagers[0].IsJointed()) {
 						Vector2 posWorldMoved = Camera.main.ScreenToWorldPoint(inputPosition);
 						Vector2 screenPosition = Camera.main.WorldToScreenPoint(transform.position);
-//							Vector2 movedToBegin = inputPosition - posInputBegan;	// 入力始点への角度
-						Vector2 pos2D = transform.position;
-						Vector2 root = blocks[blockNum].mainJoint.connectedAnchor;
-						if(joint.distance < 0.5f && blockNum > 0)
-							root = blocks[blockNum-1].mainJoint.connectedAnchor;
-						Vector2 playerToRoot = root - pos2D;	// 接続位置への角度
-						
-						Debug.DrawLine(transform.position, posWorldMoved, Color.red);
-						if(Vector3.Distance(screenPosition, inputPosition) > holdPlayerExpand) 
-						{
-							float distance = Vector2.Distance(posWorldMoved, root);
-							Debug.DrawRay(root, Vector3.up, Color.blue);
-							SetChainLength(distance);
+
+//						Debug.DrawLine(posWorldMoved, transform.position, Color.green);
+
+						float distance = Vector2.Distance(screenPosition, inputPosition);
+						if(distance > holdPlayerExpand) {
+							lineManagers[0].ControlLength(posWorldMoved);
 						}
 					}
-*/
+					break;
 				}
+
 				// 接地していれば歩ける
-				else if(isStand) {
+				if(isStand) {
 					Vector2 posWorldMoved = Camera.main.ScreenToWorldPoint(inputPosition);
 					rigidbody2D.AddForce(Vector2.right * (posWorldMoved.x - transform.position.x) * movePower);
+					break;
 				}
+
 				// 接続していたらスイングできる
-				else if(lineManagers[0].IsJointed()) {
+				if(lineManagers[0].IsTension()) {
 					Vector3 posWorldMoved = Camera.main.ScreenToWorldPoint(inputPosition);
 					Vector3 vec = posWorldMoved - transform.position;
 					float dot = Vector2.Dot(rigidbody2D.velocity, vec);
-					Debug.Log("dot "+ dot);
+
 					if(dot > 0 && dot < 90f) {
 						Vector2 vel = rigidbody2D.velocity;
 						float velSpd = vel.magnitude * velScl;
 						vel = vel.normalized * Mathf.Max(velSpd, velMin) * 60 * Time.deltaTime;
 						rigidbody2D.AddForce(vel);
 						Debug.DrawRay(transform.position, vel, Color.red);
+						break;
 					}
 				}
 				break;
@@ -224,7 +221,7 @@ public class PlayerUnit : MonoBehaviour {
 			Vector2 inputVec = posWorldEnded - posWorldBegan;
 
 			// 張った状態でフリックすると接触点へ跳べる
-			if(lineManagers[0].IsJointed()) {
+			if(lineManagers[0].IsTension()) {
 				Vector2 jointVec = lineManagers[0].GetJointVector();
 				Vector2 forceVec = Vector2.zero;
 

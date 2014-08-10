@@ -6,6 +6,7 @@ public class PlayerLineManager : MonoBehaviour {
 
 	[SerializeField] PlayerLine prefabLine;
 	[SerializeField] float distMax;
+	[SerializeField] float tensionDist;
 	[SerializeField] int lineMax;
 	PlayerLine[] lines;
 	GameObject strage;
@@ -160,8 +161,39 @@ public class PlayerLineManager : MonoBehaviour {
 		return bodyJoint.enabled;
 	}
 
+	public bool IsTension() {
+		if(IsJointed()) {
+			float length = GetJointVector().magnitude;
+			return (bodyJoint.distance - length < tensionDist);
+		}
+		return false;
+	}
+
 	public Vector2 GetJointVector() {
 		Vector2 pos = transform.position;
 		return bodyJoint.connectedAnchor - pos;
+	}
+
+	public void ControlLength(Vector2 inputPos) {
+		Vector2 pos = transform.position;
+		Vector2 jointVec = bodyJoint.connectedAnchor - pos;
+		Vector2 inputVec = inputPos - pos;
+
+		float dot = Vector2.Dot(jointVec, inputVec);
+
+		Debug.DrawRay(pos, jointVec, Color.yellow);
+		Debug.DrawRay(pos, inputVec, Color.magenta);
+
+		if(dot < 0)
+			bodyJoint.distance += 10 * Time.deltaTime;
+		else bodyJoint.distance -= 10 * Time.deltaTime;
+/*
+		if(joint.distance < 0.5f && blockNum > 0)
+			root = blocks[blockNum-1].mainJoint.connectedAnchor;
+		Vector2 playerToRoot = root - inputPos;	// 接続位置への角度
+		
+		Debug.DrawLine(transform.position, posWorldMoved, Color.red);
+		float distance = Vector2.Distance(posWorldMoved, root);
+*/
 	}
 }
