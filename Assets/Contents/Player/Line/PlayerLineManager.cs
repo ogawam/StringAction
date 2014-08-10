@@ -84,6 +84,9 @@ public class PlayerLineManager : MonoBehaviour {
 				tailLine.MainCollider.size = new Vector2(0.1f, vec.magnitude);
 				tailLine.isContacted = false;
 
+				// ブラブラさせない
+				tailLine.Hold(endPos);
+
 				Joint(endPos, bodyJoint.distance - vec.magnitude);
 			}
 			else if(lineUseNum > 1) {
@@ -102,6 +105,7 @@ public class PlayerLineManager : MonoBehaviour {
 
 					lineUseNum--;
 					tailLine = lines[lineUseNum-1];
+
 					bodyJoint.connectedAnchor = tailLine.MainJoint.connectedAnchor;
 					bodyJoint.distance = bodyJoint.distance + tailLine.MainCollider.size.y;
 
