@@ -4,7 +4,6 @@ using System.Collections;
 public class PlayerLine : MonoBehaviour {
 
 	[SerializeField] float colliWidth = 0.2f;
-	int waitForJointFrames = 0;
 
 	HingeJoint2D hingeJoint2D;
 	public HingeJoint2D MainJoint { get { return hingeJoint2D; } }
@@ -23,12 +22,8 @@ public class PlayerLine : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if(waitForJointFrames > 0) {
-			waitForJointFrames--;
-			if(waitForJointFrames == 0) {
-				boxCollider2D.isTrigger = false;
-			}
-		}
+		if(gameObject.activeSelf)
+			Debug.DrawLine(hingeJoint2D.connectedAnchor, transform.position - transform.rotation * boxCollider2D.size * 0.5f, Color.blue);
 	}
 
 	// 接触情報
@@ -71,13 +66,11 @@ public class PlayerLine : MonoBehaviour {
 		hingeJoint2D.anchor = new Vector2(0, vec.magnitude * 0.5f);
 
 		boxCollider2D.size = new Vector2(colliWidth, vec.magnitude);
-		boxCollider2D.isTrigger = false;
 
 		Debug.Log("vec "+ vec+ " angle "+ angle + " inv "+ (360 - angle));
 
 		isContacted = 
 		isContactedFirst = false;
-		waitForJointFrames = 1;		
 	}
 
 	public void Disjoint() {

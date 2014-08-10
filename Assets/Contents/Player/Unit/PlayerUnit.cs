@@ -12,12 +12,7 @@ public class PlayerUnit : MonoBehaviour {
 	[SerializeField] float forcePower;
 	[SerializeField] float weightPower;
 	[SerializeField] float movePower;
-
-	[SerializeField] ChainTest prefabChain;
-	[SerializeField] ChainTest prefabBlock;
-
-	int blockNum;
-	int waitForJointFrames;
+	[SerializeField] float springPower;
 
 	[SerializeField] float holdPlayerRange;
 	[SerializeField] float holdPlayerExpand;
@@ -35,9 +30,6 @@ public class PlayerUnit : MonoBehaviour {
 	[SerializeField] float minZoom = 6;
 	[SerializeField] float maxZoom = 12;
 	[SerializeField] float distToZoom = 480;
-
-	List<ChainTest> blocks = new List<ChainTest>();
-//	DistanceJoint2D joint;
 
 	Vector3 rootJointPos;
 	Vector3 tailJointPos;
@@ -192,20 +184,25 @@ public class PlayerUnit : MonoBehaviour {
 					}
 */
 				}
+				// 接地していれば歩ける
 				else if(isStand) {
 					Vector2 posWorldMoved = Camera.main.ScreenToWorldPoint(inputPosition);
 					rigidbody2D.AddForce(Vector2.right * (posWorldMoved.x - transform.position.x) * movePower);
 				}
-/*
-				else if(joint.enabled) {
-					Vector2 posWorldMoved = Camera.main.ScreenToWorldPoint(inputPosition);
-					if(Vector2.Dot(rigidbody2D.velocity, posWorldMoved - inputPosition) < 22.5f) {
+				// 接続していたらスイングできる
+				else if(lineManagers[0].IsJointed()) {
+					Vector3 posWorldMoved = Camera.main.ScreenToWorldPoint(inputPosition);
+					Vector3 vec = posWorldMoved - transform.position;
+					float dot = Vector2.Dot(rigidbody2D.velocity, vec);
+					Debug.Log("dot "+ dot);
+					if(dot > 0 && dot < 90f) {
 						Vector2 vel = rigidbody2D.velocity;
 						float velSpd = vel.magnitude * velScl;
-						rigidbody2D.AddForce(vel.normalized * Mathf.Max(velSpd, velMin) * 60 * Time.deltaTime);
+						vel = vel.normalized * Mathf.Max(velSpd, velMin) * 60 * Time.deltaTime;
+						rigidbody2D.AddForce(vel);
+						Debug.DrawRay(transform.position, vel, Color.red);
 					}
 				}
-*/
 				break;
 			case TouchPhase.Ended:
 				posInputEnded = inputPosition;
@@ -218,174 +215,32 @@ public class PlayerUnit : MonoBehaviour {
 			}
 			Debug.DrawLine(posWorldBegan, posWorldEnded);
 		}
-/*
-		if(joint.enabled) {
-
-			{
-				// チェインのデバッグ表示
-				for(int i = 0; i <= blockNum; ++i) {
-					Vector2 bgnPos = blocks[i].mainJoint.connectedAnchor;
-					Vector2 endPos = Vector2.zero;
-					if(i < blockNum)
-						endPos = blocks[i+1].mainJoint.connectedAnchor;
-					else endPos = transform.position;
-					Debug.DrawLine(bgnPos, endPos, Color.green);
-				}
-
-				// 
-				Vector2 pos = transform.position;
-				Vector2 vec = blocks[blockNum].mainJoint.connectedAnchor - pos;
-				blocks[blockNum].mainJoint.anchor = new Vector2(vec.magnitude * 0.5f, 0);
-				(blocks[blockNum].collider2D as BoxCollider2D).size = new Vector2(vec.magnitude, 0.1f);
-
-				// 
-				if(blockTailJoint != null) {
-					blockTailJoint.anchor = new Vector2(-vec.magnitude * 0.5f, 0);
-					blockTailJoint.connectedAnchor = transform.position;
-					blockTailJoint.enabled = true;
-				}
-				if(waitForJointFrames > 0) {
-					waitForJointFrames--;
-					if(waitForJointFrames == 0)
-						blocks[blockNum].collider2D.isTrigger = false;
-				}
-
-				if(blockNum >= 1) {
-					pos = transform.position;
-					vec = blocks[blockNum-1].mainJoint.connectedAnchor - pos;
-					RaycastHit2D result = Physics2D.Raycast(pos, vec, vec.magnitude, 1);
-					if(result.collider != null) {
-						Debug.DrawRay(pos, vec, Color.red);
-						Debug.DrawRay(result.point, result.normal * 10, Color.red);
-					}
-					else {
-						Debug.DrawRay(pos, vec, Color.yellow);
-						blocks[blockNum].gameObject.SetActive(false);
-
-						blockNum--;
-						joint.connectedAnchor = blocks[blockNum].mainJoint.connectedAnchor;
-						joint.distance = joint.distance + (blocks[blockNum].collider2D as BoxCollider2D).size.x;
-
-						blocks[blockNum].rigidbody2D.isKinematic = false;
-						blocks[blockNum].mainJoint.anchor = new Vector2(vec.magnitude * 0.5f, 0);
-						(blocks[blockNum].collider2D as BoxCollider2D).size = new Vector2(vec.magnitude, 0.1f);
-						blocks[blockNum].collider2D.isTrigger = true;
-						waitForJointFrames = 2;
-
-//						SetChainLength(joint.distance);
-
-
-						Destroy(blockTailJoint);
-						blockTailJoint = blocks[blockNum].gameObject.AddComponent<HingeJoint2D>();
-						blockTailJoint.anchor = new Vector2(-vec.magnitude * 0.5f, 0);
-						blockTailJoint.enabled = false;					
-					}
-				}
-
-				if(blocks[blockNum].isContacted && blockNum+1 < blocks.Count) {
-					Vector2 bgnPos = blocks[blockNum].mainJoint.connectedAnchor;
-					Vector2 endPos = blocks[blockNum].GetContactPos();
-					vec = endPos - bgnPos;
-
-					endPos += vec.normalized * 0.2f;
-					vec = endPos - bgnPos;
-
-					joint.connectedAnchor = endPos;
-					joint.distance = joint.distance - vec.magnitude;
-//					SetChainLength(joint.distance);
-
-					blocks[blockNum].isContacted = false;
-					blocks[blockNum].mainJoint.anchor = new Vector2(vec.magnitude * 0.5f, 0);
-					(blocks[blockNum].collider2D as BoxCollider2D).size = new Vector2(vec.magnitude, 0.1f);
-					Destroy(blockTailJoint);
-					blockNum++;
-
-					bgnPos = endPos;
-					endPos = transform.position;
-					vec = endPos - bgnPos;
-
-					blocks[blockNum].transform.position = bgnPos + vec * 0.5f;
-					blocks[blockNum].transform.eulerAngles = Vector3.forward * Vector3.Angle(endPos, bgnPos);
-					blocks[blockNum].gameObject.SetActive(true);
-					blocks[blockNum].mainJoint.connectedAnchor = bgnPos;
-					blocks[blockNum].mainJoint.anchor = new Vector2(vec.magnitude * 0.5f, 0);
-					(blocks[blockNum].collider2D as BoxCollider2D).size = new Vector2(vec.magnitude, 0.1f);
-					blocks[blockNum].transform.position = endPos + vec * 0.5f;
-					blocks[blockNum].collider2D.isTrigger = true;
-					waitForJointFrames = 2;
-
-					Destroy(blockTailJoint);
-					blockTailJoint = blocks[blockNum].gameObject.AddComponent<HingeJoint2D>();
-					blockTailJoint.anchor = new Vector2(-vec.magnitude * 0.5f, 0);
-					blockTailJoint.enabled = false;					
-				}
-			}
-			Debug.DrawLine(blockPos[0], blockPos[1], Color.blue);
-		}
-*/
-
-		Debug.DrawRay(transform.position, rigidbody2D.velocity);
 
 		if(isTapped) {
 			foreach(PlayerLineManager lineManager in lineManagers)
 				lineManager.Disjoint();				
-/*
-			joint.enabled = false;
-			foreach(ChainTest block in blocks) {
-				block.Disappear();
-			}			
-*/
 		}
 		else if(isFlicked) {
-			Vector3 vec = posWorldEnded - posWorldBegan;
-			Vector2 vec2D = vec;
-/*
-			if(joint.enabled) {
-				Vector2 pos = transform.position;
-				float dot = Vector3.Dot(vec, joint.connectedAnchor - pos);
-				if(dot < -22.5f) {
-					vec2D = joint.connectedAnchor - pos;
-					vec2D = vec2D * 2;
-				}
-				else {
-					vec2D = Vector2.zero;
-				}
-				rigidbody2D.AddForce(vec2D * forcePower, ForceMode2D.Impulse);
+			Vector2 inputVec = posWorldEnded - posWorldBegan;
 
+			// 張った状態でフリックすると接触点へ跳べる
+			if(lineManagers[0].IsJointed()) {
+				Vector2 jointVec = lineManagers[0].GetJointVector();
+				Vector2 forceVec = Vector2.zero;
+
+				float dot = Vector3.Dot(inputVec, jointVec);
+				if(dot < -22.5f) {
+					forceVec = jointVec * springPower;
+				}
+				rigidbody2D.AddForce(forceVec * forcePower, ForceMode2D.Impulse);
 			}
 			else 
-*/			{
-				RaycastHit2D result = Physics2D.Raycast(transform.position, vec, Mathf.Infinity, 1);
+			{
+				RaycastHit2D result = Physics2D.Raycast(transform.position, inputVec, Mathf.Infinity, 1);
 				if(result) {
 					contactVec = result.normal;
 					rootJointPos = result.point + result.normal * 0.2f;
 					lineManagers[0].Joint(rootJointPos);
-/*					
-					contactPos = rootJointPos;
-
-					joint.enabled = true;
-					joint.distance = Vector3.Distance(rootJointPos, transform.position);
-					joint.connectedAnchor = rootJointPos;
-					stringLength = joint.distance;
-
-					vec = rootJointPos - transform.position;
-					blocks[0].transform.position = transform.position + vec * 0.5f;
-					blocks[0].transform.eulerAngles = Vector3.forward * Vector3.Angle(transform.position, rootJointPos);
-					blocks[0].gameObject.SetActive(true);
-					blocks[0].mainJoint.connectedAnchor = rootJointPos;
-					blocks[0].mainJoint.anchor = new Vector2(vec.magnitude * 0.5f, 0);
-					(blocks[0].collider2D as BoxCollider2D).size = new Vector2(vec.magnitude, 0.1f);
-					blocks[0].transform.position = transform.position + vec * 0.5f;
-					blocks[0].collider2D.isTrigger = true;
-					blocks[0].isContacted = false;
-					waitForJointFrames = 2;
-
-					blockNum = 0;
-					Destroy(blockTailJoint);
-					blockTailJoint = blocks[blockNum].gameObject.AddComponent<HingeJoint2D>();
-					blockTailJoint.anchor = new Vector2(-vec.magnitude * 0.5f, 0);
-					blockTailJoint.enabled = false;						
-*/
 				}
 			}
 			isFlicked = false;
@@ -396,7 +251,7 @@ public class PlayerUnit : MonoBehaviour {
 		pressCount += Time.deltaTime;
 
 		Vector3 posCam = Camera.main.transform.position;
-		Vector3 lookAt = transform.position;
+		Vector3 lookAt = transform.position;	
 /*
 		if(joint.enabled) 
 			lookAt += (rootJointPos - lookAt) * 0.5f;
@@ -413,36 +268,7 @@ public class PlayerUnit : MonoBehaviour {
 		sea.transform.position = transform.position;
 		sea.transform.localScale = Vector3.one * (1.5f + (2.0f * rate));
 	}
-/*
-	void SetChainLength(float length) {
-		length = Mathf.Clamp(length, 0, maxLength);
-		Debug.Log("length "+ length);
-		float offset = (length - stringLength);
-		if(offset < 0) {
-			if(joint.distance < -offset) {
-				offset += joint.distance;
-				blocks[blockNum].gameObject.SetActive(false);
 
-				blockNum--;
-				joint.connectedAnchor = blocks[blockNum].mainJoint.connectedAnchor;
-				joint.distance = (blocks[blockNum].collider2D as BoxCollider2D).size.x;
-
-				blocks[blockNum].rigidbody2D.isKinematic = false;
-				blocks[blockNum].mainJoint.anchor = new Vector2(joint.distance * 0.5f, 0);
-				(blocks[blockNum].collider2D as BoxCollider2D).size = new Vector2(joint.distance, 0.1f);
-				blocks[blockNum].collider2D.isTrigger = true;
-				waitForJointFrames = 2;
-
-				Destroy(blockTailJoint);
-				blockTailJoint = blocks[blockNum].gameObject.AddComponent<HingeJoint2D>();
-				blockTailJoint.anchor = new Vector2(-joint.distance * 0.5f, 0);
-				blockTailJoint.enabled = false;						
-			}
-		}
-		joint.distance = joint.distance + offset;
-		stringLength = length;
-	}
-*/
 	bool isStand = false;
 	void OnCollisionStay2D(Collision2D colli) {
 		isStand = true;
@@ -452,24 +278,5 @@ public class PlayerUnit : MonoBehaviour {
 		isStand = false;
 	}
 
-
-	void OnGUI() {
-/*
-		GUILayout.Label("fps "+ (Time.deltaTime * 60 * 60));
-		GUILayout.Label("velocity "+ rigidbody2D.velocity.magnitude);
-		GUILayout.Label("stringLength "+ stringLength);
-
-		float totalLength = 0;
-		GUILayout.Label("joint.distance "+ joint.distance);
-		for(int i = 0; i <= blockNum; ++i) {
-			float length = (blocks[i].collider2D as BoxCollider2D).size.x;
-			GUILayout.Label("block "+ i+ " length "+ length);
-			totalLength += length;
-		}
-		GUILayout.Label("total length "+ totalLength);
-*/
-//		isDispGizmos ^= GUILayout.Button("disp gizmos", GUILayout.Height(64));
-	}
-
-	public bool isDispGizmos = false;
+	void OnGUI() {}
 }

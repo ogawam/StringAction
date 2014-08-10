@@ -92,8 +92,8 @@ public class PlayerLineManager : MonoBehaviour {
 
 				RaycastHit2D result = Physics2D.Raycast(endPos, vec, vec.magnitude, 1);
 				if(result.collider != null) {
-					Debug.DrawRay(endPos, vec, Color.red);
-					Debug.DrawRay(result.point, result.normal * 10, Color.red);
+//					Debug.DrawRay(endPos, vec, Color.red);
+//					Debug.DrawRay(result.point, result.normal * 10, Color.red);
 				}
 				else {
 					Debug.DrawRay(endPos, vec, Color.yellow);
@@ -155,4 +155,13 @@ public class PlayerLineManager : MonoBehaviour {
 			line.Disjoint();
 	}
 
+	// つながっているか？
+	public bool IsJointed() {
+		return bodyJoint.enabled;
+	}
+
+	public Vector2 GetJointVector() {
+		Vector2 pos = transform.position;
+		return bodyJoint.connectedAnchor - pos;
+	}
 }
