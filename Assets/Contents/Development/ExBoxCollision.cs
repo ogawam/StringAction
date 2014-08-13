@@ -19,10 +19,10 @@ public class BoxCollisionTest : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		RaycastHit2D result = Physics2D.BoxCast(pos, size, angle, direction, distance);
-		if(result != null) {
-			Debug.DrawRay(result.point, result.normal);
-		}	
+//		RaycastHit2D result = Physics2D.BoxCast(pos, size, angle, direction, distance);
+//		if(result != null) {
+//			Debug.DrawRay(result.point, result.normal);
+//		}	
 
 		if(Input.anyKeyDown) {
 			StartCoroutine(CreateBox());

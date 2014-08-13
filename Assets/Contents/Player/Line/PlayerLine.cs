@@ -1,11 +1,17 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class PlayerLine : MonoBehaviour {
+
+	[SerializeField] GameObject prefabPart;
+	HingeJoint2D partJoint = null;
 
 	[SerializeField] float colliWidth = 0.2f;
 
 	HingeJoint2D[] hingeJoint2D;
+
+	List<PlayerLinePart> parts = new List<PlayerLinePart>();
 
 	// todo : これ外に極力出さないでできるか？
 	public HingeJoint2D MainJoint { get { return hingeJoint2D[0]; } }
@@ -24,6 +30,8 @@ public class PlayerLine : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		if(partJoint != null)
+			partJoint.enabled = true;
 		if(gameObject.activeSelf)
 			Debug.DrawLine(hingeJoint2D[0].connectedAnchor, transform.position - transform.rotation * boxCollider2D.size * 0.5f, Color.blue);
 	}
@@ -72,6 +80,25 @@ public class PlayerLine : MonoBehaviour {
 
 		isContacted = 
 		isContactedFirst = false;
+
+		// スクリプト
+		PlayerLinePart prevPart = null;
+		for(int i = 0; i < 10; ++i) {
+			PlayerLinePart part = (Instantiate(prefabPart) as GameObject).GetComponent<PlayerLinePart>();
+			if(prevPart != null)
+				part.GetComponent<AnchoredJoint2D>().connectedBody = prevPart.rigidbody2D;
+			else part.GetComponent<AnchoredJoint2D>().connectedAnchor = rootPos;
+			prevPart = part;
+			parts.Add(part);
+		}		
+		partJoint = parts[parts.Count-1].gameObject.AddComponent<HingeJoint2D>();
+		partJoint.connectedAnchor = bodyPos;
+		partJoint.enabled = false;
+	}
+
+	public void UpdateJoint(Vector2 bodyPos) {
+		if(partJoint != null)
+			partJoint.connectedAnchor = bodyPos;
 	}
 
 	public void Hold(Vector2 holdPos) {
@@ -80,9 +107,15 @@ public class PlayerLine : MonoBehaviour {
 		hingeJoint2D[1].connectedAnchor = holdPos;
 		hingeJoint2D[1].anchor = new Vector2(0, -vec.magnitude / 2);
 		hingeJoint2D[1].enabled = true;
+		partJoint.connectedAnchor = holdPos;
+		partJoint.enabled = false;
 	}
 
 	public void Disjoint() {
+		foreach(PlayerLinePart part in parts)
+			Destroy(part.gameObject);
+		parts.Clear();
+		partJoint = null;
 		isContacted = false;
 		gameObject.SetActive(false);
 	}

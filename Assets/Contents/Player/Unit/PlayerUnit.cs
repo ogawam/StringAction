@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class PlayerUnit : MonoBehaviour {
-	static private PlayerUnit instance;
-	static public PlayerUnit Get() { return instance; }
-
+	[SerializeField] SpriteRenderer spriteRenderer;
 	[SerializeField] float tapSec;
 	[SerializeField] float flickSec;
 	[SerializeField] float flickDist;
@@ -24,9 +22,6 @@ public class PlayerUnit : MonoBehaviour {
 	[SerializeField] float velScl;
 	[SerializeField] float velMin;
 
-	GameObject blockStacks;
-	HingeJoint2D blockTailJoint;
-	
 	[SerializeField] float minZoom = 6;
 	[SerializeField] float maxZoom = 12;
 	[SerializeField] float distToZoom = 480;
@@ -34,39 +29,14 @@ public class PlayerUnit : MonoBehaviour {
 	Vector3 rootJointPos;
 	Vector3 tailJointPos;
 
-	Vector3 contactPos;
-	Vector2 contactVec;
-
 	PlayerLineManager[] lineManagers;
-
-	float holdCount;
 
 	void Awake () {
 		lineManagers = GetComponents<PlayerLineManager>();
-
-		blockStacks = new GameObject();
-		blockStacks.name = "blockStacks";
-		instance = this;
 	}
 
 	// Use this for initialization
 	void Start () {
-/*
-		int layerIndex = LayerMask.NameToLayer("Ignore Raycast");
-		Physics2D.IgnoreLayerCollision(layerIndex, layerIndex, true);
-
-		joint = gameObject.AddComponent<DistanceJoint2D>();
-		joint.enabled = false;
-		joint.distance = stringLength;
-		joint.maxDistanceOnly = true;
-
-		for(int i = 0; i < 10; ++i) {
-			ChainTest block = Instantiate(prefabBlock) as ChainTest;
-			block.transform.parent = blockStacks.transform;
-			block.gameObject.SetActive(false);
-			blocks.Add(block);
-		}
-*/
 	}
 
 	Vector2 posInputBegan = Vector2.zero;
@@ -75,10 +45,10 @@ public class PlayerUnit : MonoBehaviour {
 	Vector2 posWorldEnded = Vector2.zero;
 	float pressCount = 0;
 
-	Vector3[] blockPos = new Vector3[2];
-
 	// Update is called once per frame
 	void Update () {
+		spriteRenderer.transform.position = transform.position;
+
 		bool isTapped = false;
 		bool isFlicked = false;
 		bool isInputed = false;
@@ -159,7 +129,6 @@ public class PlayerUnit : MonoBehaviour {
 				posInputBegan = inputPosition;
 				posWorldBegan = Camera.main.ScreenToWorldPoint(posInputBegan);
 				pressCount = 0;			
-				holdCount = 0;
 				break;
 			case TouchPhase.Moved:
 				if(inputNum > 1) {
@@ -235,15 +204,13 @@ public class PlayerUnit : MonoBehaviour {
 			{
 				RaycastHit2D result = Physics2D.Raycast(transform.position, inputVec, Mathf.Infinity, 1);
 				if(result) {
-					contactVec = result.normal;
+//					contactVec = result.normal;
 					rootJointPos = result.point + result.normal * 0.2f;
 					lineManagers[0].Joint(rootJointPos);
 				}
 			}
 			isFlicked = false;
 		}
-
-		Debug.DrawRay(rootJointPos, contactVec * 1);
 
 		pressCount += Time.deltaTime;
 

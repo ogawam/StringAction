@@ -60,6 +60,7 @@ public class PlayerLineManager : MonoBehaviour {
 			// 末端のラインを距離にあわせる
 			tailLine.MainJoint.anchor = new Vector2(0, vec.magnitude * 0.5f);
 			tailLine.MainCollider.size = new Vector2(0.1f, vec.magnitude);
+			tailLine.UpdateJoint(transform.position);
 
 			float angle = Mathf.Rad2Deg * Mathf.Atan2(vec.x, vec.y);
 			tailLine.transform.position = endPos + (vec * 0.5f);
@@ -89,11 +90,13 @@ public class PlayerLineManager : MonoBehaviour {
 
 				Joint(endPos, bodyJoint.distance - vec.magnitude);
 			}
+			// 中折れがある場合
 			else if(lineUseNum > 1) {
 				bgnPos = lines[lineUseNum-2].MainJoint.connectedAnchor;
 				endPos = transform.position;
 				vec = bgnPos - endPos;
 
+				// 親の根元まで障害物がなければ再び融合
 				RaycastHit2D result = Physics2D.Raycast(endPos, vec, vec.magnitude, 1);
 				if(result.collider != null) {
 //					Debug.DrawRay(endPos, vec, Color.red);
