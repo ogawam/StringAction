@@ -15,7 +15,7 @@ public class PlayerLinePart : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		transform.localScale = Vector3.one * (1 + 0.25f * Mathf.Sin(frame /sclCycle));
+//		transform.localScale = Vector3.one * (1 + 0.25f * Mathf.Sin(frame /sclCycle));
 //		transform.localEulerAngles = Vector3.forward * 360 * (frame / rotCycle);
 		frame += Time.deltaTime;
 	}

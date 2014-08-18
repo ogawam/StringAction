@@ -194,6 +194,8 @@ public class PlayerLineManager : MonoBehaviour {
 		if(dot < 0)
 			bodyJoint.distance += 10 * Time.deltaTime;
 		else bodyJoint.distance -= 10 * Time.deltaTime;
+
+		lines[lineUseNum - 1].CreateChain(transform.position);
 /*
 		if(joint.distance < 0.5f && blockNum > 0)
 			root = blocks[blockNum-1].mainJoint.connectedAnchor;

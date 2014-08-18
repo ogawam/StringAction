@@ -81,19 +81,7 @@ public class PlayerLine : MonoBehaviour {
 		isContacted = 
 		isContactedFirst = false;
 
-		// スクリプト
-		PlayerLinePart prevPart = null;
-		for(int i = 0; i < 10; ++i) {
-			PlayerLinePart part = (Instantiate(prefabPart) as GameObject).GetComponent<PlayerLinePart>();
-			if(prevPart != null)
-				part.GetComponent<AnchoredJoint2D>().connectedBody = prevPart.rigidbody2D;
-			else part.GetComponent<AnchoredJoint2D>().connectedAnchor = rootPos;
-			prevPart = part;
-			parts.Add(part);
-		}		
-		partJoint = parts[parts.Count-1].gameObject.AddComponent<HingeJoint2D>();
-		partJoint.connectedAnchor = bodyPos;
-		partJoint.enabled = false;
+		CreateChain(bodyPos);
 	}
 
 	public void UpdateJoint(Vector2 bodyPos) {
@@ -102,21 +90,47 @@ public class PlayerLine : MonoBehaviour {
 	}
 
 	public void Hold(Vector2 holdPos) {
-		Vector2 rootPos = hingeJoint2D[0].connectedAnchor;
-		Vector2 vec = holdPos - rootPos;
-		hingeJoint2D[1].connectedAnchor = holdPos;
-		hingeJoint2D[1].anchor = new Vector2(0, -vec.magnitude / 2);
-		hingeJoint2D[1].enabled = true;
-		partJoint.connectedAnchor = holdPos;
-		partJoint.enabled = false;
+		CreateChain(holdPos);
 	}
 
 	public void Disjoint() {
+		DeleteChain();
+		isContacted = false;
+		gameObject.SetActive(false);
+	}
+
+	public void CreateChain(Vector2 bodyPos) {
+		DeleteChain();
+
+		Vector2 rootPos = hingeJoint2D[0].connectedAnchor;		
+		Vector2 vec = rootPos - bodyPos;
+		HingeJoint2D joint = prefabPart.GetComponent<HingeJoint2D>();
+		int num = Mathf.CeilToInt(Mathf.Abs(vec.magnitude / joint.connectedAnchor.y) / 2);
+		Vector3 add = vec / num;
+		Vector3 pos = bodyPos;
+		Debug.Log("num "+ num);
+
+		PlayerLinePart prevPart = null;
+		for(int i = 0; i < num; ++i) {
+			PlayerLinePart part = (Instantiate(prefabPart) as GameObject).GetComponent<PlayerLinePart>();
+			part.transform.parent = transform;
+			part.transform.position = pos;
+			if(prevPart != null)
+				part.GetComponent<AnchoredJoint2D>().connectedBody = prevPart.rigidbody2D;
+			else part.GetComponent<AnchoredJoint2D>().connectedAnchor = rootPos;
+			prevPart = part;
+			parts.Add(part);
+			pos += add;
+		}		
+		partJoint = parts[parts.Count-1].gameObject.AddComponent<HingeJoint2D>();
+		partJoint.connectedAnchor = bodyPos;
+		partJoint.enabled = false;
+	}
+
+	public void DeleteChain() {
 		foreach(PlayerLinePart part in parts)
 			Destroy(part.gameObject);
 		parts.Clear();
-		partJoint = null;
-		isContacted = false;
-		gameObject.SetActive(false);
+		partJoint = null;		
 	}
 }
