@@ -14,7 +14,7 @@ public class PlayerLineManager : MonoBehaviour {
 	Vector3 jointPos;
 	DistanceJoint2D bodyJoint;
 	HingeJoint2D lineJoint;
-	float totalDist;
+	float totalDist = 0;
 	int lineUseNum = 0;
 
 	// Use this for initialization
@@ -39,6 +39,20 @@ public class PlayerLineManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		if(chainAnchor != null) {
+			if(chainAnchor.isHit) {
+				Disjoint();
+				Joint(chainAnchor.transform.position);				
+				Destroy(chainAnchor.gameObject);
+				chainAnchor = null;
+			}
+			else if(chainAnchor.lifeTime < 0) {
+				Disjoint();
+				Destroy(chainAnchor.gameObject);
+				chainAnchor = null;
+			}
+		}
+
 		if(bodyJoint.enabled) {
 			Debug.DrawLine(transform.position, jointPos, Color.white);
 		}
@@ -121,6 +135,18 @@ public class PlayerLineManager : MonoBehaviour {
 				}				
 			}
 		}
+	}
+
+	[SerializeField] PlayerChainAnchor prefabChainAnchor; 
+	PlayerChainAnchor chainAnchor = null;
+
+	public void Shoot(Vector2 impulse) {
+		if(chainAnchor != null) 
+			return;
+
+		chainAnchor = Instantiate(prefabChainAnchor, transform.position, Quaternion.identity) as PlayerChainAnchor;
+		chainAnchor.rigidbody2D.AddForce(impulse, ForceMode2D.Impulse);
+		Joint(transform.position, 10);
 	}
 
 	public void Joint(Vector3 jointPos_) {

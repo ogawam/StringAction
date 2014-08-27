@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class PlayerLinePart : MonoBehaviour {
+public class PlayerChain : MonoBehaviour {
 
 	[SerializeField] float rotCycle;
 	[SerializeField] float sclCycle;

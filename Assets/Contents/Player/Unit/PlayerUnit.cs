@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class PlayerUnit : MonoBehaviour {
-	[SerializeField] SpriteRenderer spriteRenderer;
+	[SerializeField] PlayerChainAnchor prefabChainAnchor; 
+	[SerializeField] GameObject prefabBackground;
+	[SerializeField] SpriteRenderer prefabSprite; 
 	[SerializeField] float tapSec;
 	[SerializeField] float flickSec;
 	[SerializeField] float flickDist;
@@ -15,7 +17,6 @@ public class PlayerUnit : MonoBehaviour {
 	[SerializeField] float holdPlayerRange;
 	[SerializeField] float holdPlayerExpand;
 
-	[SerializeField] GameObject sea;
 	[SerializeField] float stringLength;
 	[SerializeField] float maxLength;
 
@@ -25,6 +26,10 @@ public class PlayerUnit : MonoBehaviour {
 	[SerializeField] float minZoom = 6;
 	[SerializeField] float maxZoom = 12;
 	[SerializeField] float distToZoom = 480;
+
+	PlayerChainAnchor chainAnchor;
+	SpriteRenderer spriteRenderer;
+	GameObject background;
 
 	Vector3 rootJointPos;
 	Vector3 tailJointPos;
@@ -37,6 +42,9 @@ public class PlayerUnit : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		spriteRenderer = Instantiate(prefabSprite) as SpriteRenderer;
+		background = Instantiate(prefabBackground) as GameObject;
+		chainAnchor = null;
 	}
 
 	Vector2 posInputBegan = Vector2.zero;
@@ -182,6 +190,16 @@ public class PlayerUnit : MonoBehaviour {
 			Debug.DrawLine(posWorldBegan, posWorldEnded);
 		}
 
+		if(chainAnchor != null) {
+			if(chainAnchor.isHit) {
+			//	contactVec = result.normal;
+				rootJointPos = chainAnchor.transform.position;//result.point + result.normal * 0.2f;
+				lineManagers[0].Joint(rootJointPos);				
+				chainAnchor.isHit = false;
+				Destroy(chainAnchor.gameObject);
+			}
+		}
+
 		if(isTapped) {
 			foreach(PlayerLineManager lineManager in lineManagers)
 				lineManager.Disjoint();				
@@ -190,24 +208,20 @@ public class PlayerUnit : MonoBehaviour {
 			Vector2 inputVec = posWorldEnded - posWorldBegan;
 
 			// 張った状態でフリックすると接触点へ跳べる
-			if(lineManagers[0].IsTension()) {
-				Vector2 jointVec = lineManagers[0].GetJointVector();
-				Vector2 forceVec = Vector2.zero;
+			if(lineManagers[0].IsJointed()) {
+				if(lineManagers[0].IsTension()) {
+					Vector2 jointVec = lineManagers[0].GetJointVector();
+					Vector2 forceVec = Vector2.zero;
 
-				float dot = Vector3.Dot(inputVec, jointVec);
-				if(dot < -22.5f) {
-					forceVec = jointVec * springPower;
+					float dot = Vector3.Dot(inputVec, jointVec);
+					if(dot < -22.5f) {
+						forceVec = jointVec * springPower;
+					}
+					rigidbody2D.AddForce(forceVec.normalized * forcePower, ForceMode2D.Impulse);
 				}
-				rigidbody2D.AddForce(forceVec * forcePower, ForceMode2D.Impulse);
 			}
-			else 
-			{
-				RaycastHit2D result = Physics2D.Raycast(transform.position, inputVec, Mathf.Infinity, 1);
-				if(result) {
-//					contactVec = result.normal;
-					rootJointPos = result.point + result.normal * 0.2f;
-					lineManagers[0].Joint(rootJointPos);
-				}
+			else {
+				lineManagers[0].Shoot(inputVec * 5);
 			}
 			isFlicked = false;
 		}
@@ -229,8 +243,8 @@ public class PlayerUnit : MonoBehaviour {
 		float rate = Mathf.Min(1, dist / distToZoom);
 		Camera.main.orthographicSize = minZoom + (maxZoom - minZoom) * rate;
 
-		sea.transform.position = transform.position;
-		sea.transform.localScale = Vector3.one * (1.5f + (2.0f * rate));
+		background.transform.position = transform.position;
+		background.transform.localScale = Vector3.one * (1 + (0.5f * rate));
 	}
 
 	bool isStand = false;
