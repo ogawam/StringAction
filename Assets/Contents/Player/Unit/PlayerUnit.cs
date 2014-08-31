@@ -3,6 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class PlayerUnit : MonoBehaviour {
+	enum Anim {
+		Sit,
+		Walk
+	};
+	Anim anim;
+	void Animation(Anim anim_) {
+		spriteRenderer.sprite = sprites[(int)anim_];
+		anim = anim_;
+	}
+	[SerializeField] Sprite[] sprites;
+
+
 	[SerializeField] PlayerChainAnchor prefabChainAnchor; 
 	[SerializeField] GameObject prefabBackground;
 	[SerializeField] SpriteRenderer prefabSprite; 
@@ -55,7 +67,7 @@ public class PlayerUnit : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		spriteRenderer.transform.position = transform.position;
+		spriteRenderer.transform.position = transform.position + Vector3.down * 0.75f;
 
 		bool isTapped = false;
 		bool isFlicked = false;
@@ -227,6 +239,15 @@ public class PlayerUnit : MonoBehaviour {
 		}
 
 		pressCount += Time.deltaTime;
+
+		Anim anim_ = Anim.Walk;
+		if(isStand) {
+			if(rigidbody2D.velocity.magnitude < 2)
+				anim_ = Anim.Sit;
+		}
+
+		if(anim_ != anim)
+			Animation(anim_);
 
 		Vector3 posCam = Camera.main.transform.position;
 		Vector3 lookAt = transform.position;	

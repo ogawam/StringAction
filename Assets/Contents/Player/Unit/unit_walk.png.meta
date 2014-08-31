@@ -1,8 +1,8 @@
 fileFormatVersion: 2
-guid: 6eb658558e80e4af5b1d4e61bd76800b
+guid: 7967b25ef1f92412ca5ef1c1e46bc81e
 TextureImporter:
   fileIDToRecycleName:
-    21300000: unit_sit
+    21300000: unit_walk
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0

@@ -41,15 +41,12 @@ public class PlayerLineManager : MonoBehaviour {
 	void Update () {
 		if(chainAnchor != null) {
 			if(chainAnchor.isHit) {
+				Vector3 pos = chainAnchor.transform.position;
 				Disjoint();
-				Joint(chainAnchor.transform.position);				
-				Destroy(chainAnchor.gameObject);
-				chainAnchor = null;
+				Joint(pos);				
 			}
 			else if(chainAnchor.lifeTime < 0) {
 				Disjoint();
-				Destroy(chainAnchor.gameObject);
-				chainAnchor = null;
 			}
 		}
 
@@ -181,6 +178,10 @@ public class PlayerLineManager : MonoBehaviour {
 	}
 
 	public void Disjoint() {
+		if(chainAnchor != null) {
+			Destroy(chainAnchor.gameObject);
+			chainAnchor = null;
+		}
 		bodyJoint.enabled = false;
 		Destroy(lineJoint);
 		lineJoint = null;
