@@ -103,12 +103,12 @@ public class PlayerLine : MonoBehaviour {
 		DeleteChain();
 
 		Vector2 rootPos = hingeJoint2D[0].connectedAnchor;		
-		Vector2 vec = rootPos - bodyPos;
-		HingeJoint2D joint = prefabChain.GetComponent<HingeJoint2D>();
+		Vector2 vec = bodyPos - rootPos;
+		AnchoredJoint2D joint = prefabChain.GetComponent<AnchoredJoint2D>();
 		int num = Mathf.CeilToInt(Mathf.Abs(vec.magnitude / joint.connectedAnchor.y) / 2);
 		num = Mathf.Max(num, 1);
 		Vector3 add = vec / num;
-		Vector3 pos = bodyPos;
+		Vector3 pos = rootPos;
 		Debug.Log("num "+ num);
 
 		PlayerChain prevChain = null;
@@ -124,6 +124,7 @@ public class PlayerLine : MonoBehaviour {
 			pos += add;
 		}		
 		chainJoint = chains[chains.Count-1].gameObject.AddComponent<HingeJoint2D>();
+		chainJoint.anchor = new Vector2(0,0.5f);
 		chainJoint.connectedAnchor = bodyPos;
 		chainJoint.enabled = false;
 	}
